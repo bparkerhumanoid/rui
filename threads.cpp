@@ -177,43 +177,6 @@ OSAL_THREAD_FUNC_RT ecat_thread(void *ptr) {
 //                }
 //                pthread_mutex_unlock(&target_mutex);
 
-#if 0
-                // State machine control
-                if (step <= 400) {
-                    rxpdo.controlword = 0x0080;
-                    rxpdo.target_position = 0;
-                } else if (step <= 600) {
-                    rxpdo.controlword = 0x0006;
-                    rxpdo.target_position = txpdo.actual_position;
-                } else if (step <= 800) {
-                    rxpdo.controlword = 0x0007;
-                    rxpdo.target_position = txpdo.actual_position;
-                } else if (step <= 1000) {
-                    rxpdo.controlword = 0x000F;
-                    rxpdo.target_position = txpdo.actual_position;
-                } else {
-                    // Normal operational mode
-                    if (need_update) {
-                        g_motion_planner.target_position = new_target;
-                        g_motion_planner.is_moving = true;
-                    }
-
-                    // Execute trajectory planning
-                    int32_t planned_pos = plan_trajectory(&g_motion_planner, txpdo.actual_position);
-                    
-                    // Update output PDO
-                    rxpdo.controlword = 0x000F;
-                    rxpdo.target_position = txpdo.actual_position + 20;
-                    rxpdo.mode_of_operation = 8;
-                }
-
-                // Send PDO data to the slaves
-                for (int slave = 1; slave <= ec_slavecount; slave++) {
-                    memcpy(ec_slave[slave].outputs, &rxpdo, sizeof(rxpdo_t));
-                }
-#endif
-
-#if 1
                 // Send PDO data to the slaves
                 if (step <= 1000) {
                     for (int s = 0; s < ec_slavecount; s++) {
@@ -240,12 +203,14 @@ OSAL_THREAD_FUNC_RT ecat_thread(void *ptr) {
                             motor[s].set_powerstate(4);
                         }
 
-                        if (step == 400 || step == 600 || step == 800 || step == 1000) {
-                            uint8_t *pi = ec_slave[ec_index].inputs;  // txpdo
-                            uint16_t status = (pi[1] << 8) | (pi[0] << 0);
-                            logf("slave%d: step%d, state %d, status %04x, cw %04x\n",
-                                 ec_index, step, ec_slave[ec_index].state, status,
-                                 rxpdo_p->controlword);
+                        if (false) {
+                            if (step == 400 || step == 600 || step == 800 || step == 1000) {
+                                uint8_t *pi = ec_slave[ec_index].inputs;  // txpdo
+                                uint16_t status = (pi[1] << 8) | (pi[0] << 0);
+                                logf("slave%d: step%d, state %d, status %04x, cw %04x\n",
+                                     ec_index, step, ec_slave[ec_index].state, status,
+                                     rxpdo_p->controlword);
+                            }
                         }
 
                         memcpy(ec_slave[ec_index].outputs, rxpdo_p, sizeof(rxpdo_t));
@@ -264,7 +229,7 @@ OSAL_THREAD_FUNC_RT ecat_thread(void *ptr) {
 
 //#define MAX_DELTA 250
 //#define MAX_POS 524288
-#define MAX_DELTA 100
+#define MAX_DELTA 50
 #define MAX_POS 100000
                         //rxpdop->target_position = slave_requested_pos(slave);
                         if (motor[s].get_dir() == 0) {
@@ -288,7 +253,6 @@ OSAL_THREAD_FUNC_RT ecat_thread(void *ptr) {
                         memcpy(ec_slave[ec_index].outputs, rxpdo_p, sizeof(rxpdo_t));
                     }
                 }
-#endif
                 
                 if (step < 1200) {
                     step++;
@@ -392,7 +356,7 @@ OSAL_THREAD_FUNC ecat_check( void *ptr )
             }
         }
 
-        osal_usleep(10000);
+        osal_usleep(10000*10);
     }
 }
 
@@ -404,14 +368,16 @@ int start_threads() {
     // Set a higher real-time priority
     struct sched_param param;
     param.sched_priority = 99; // Maximum real-time priority
-    if (sched_setscheduler(0, SCHED_FIFO, &param) == -1) {
+    if (sched_setscheduler(0, /*SCHED_FIFO*/SCHED_RR, &param) == -1) {
         perror("sched_setscheduler failed");
     }
 
     // Set CPU affinity
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
-    CPU_SET(3, &cpuset);
+    CPU_SET(10, &cpuset);
+    CPU_SET(11, &cpuset);
+    CPU_SET(12, &cpuset);
 
     if (sched_setaffinity(0, sizeof(cpu_set_t), &cpuset) == -1) {
         perror("sched_setaffinity");

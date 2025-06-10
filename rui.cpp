@@ -73,7 +73,9 @@ int make_slave_windows() {
 
     for (int s = 0; s < slave_count; s++) {
         int height = motor[s].get_win_height();
-        motor[s].init(50+(height*s), 1);
+        int l = 50+(height*(s/2));
+        int c = (s&1) ? 61 : 1;
+        motor[s].init(l, c);
     }
     
     return 0;

@@ -635,25 +635,28 @@ int run_loop(unsigned count)
     statusf(1, "cycle %5d, Wck %3d, DCtime %12ld, dt %12ld\n",
             dorun_ecat, wkc, ec_DCtime, gl_delta);
 
-    for (int i = 1; i <= ec_slavecount; i++) {
-        if (ec_slave[i].outputs && i < 4) {
-            uint8_t *po = ec_slave[i].outputs; // rxpdo
-            statusf(2+(2*(i-1)), "O: %02x%02x %02x%02x%02x%02x %02x\n",
-                    po[1], po[0],
-                    po[5], po[4], po[3], po[2], 
-                    po[6]);
+    if (false) {
+        for (int i = 1; i <= ec_slavecount; i++) {
+            if (ec_slave[i].outputs && i < 4) {
+                uint8_t *po = ec_slave[i].outputs; // rxpdo
+                statusf(2+(2*(i-1)), "O: %02x%02x %02x%02x%02x%02x %02x\n",
+                        po[1], po[0],
+                        po[5], po[4], po[3], po[2], 
+                        po[6]);
 
-            // PDO 0x1a00
-            uint8_t *pi = ec_slave[i].inputs;  // txpdo
-            statusf(3+(2*(i-1)), "I: %02x%02x %02x%02x%02x%02x %02x%02x%02x%02x %02x%02x%02x%02x\n",
-                    pi[1], pi[0],
-                    pi[5], pi[4], pi[3], pi[2],
-                    pi[9], pi[8], pi[7], pi[6],
-                    pi[13], pi[12], pi[11], pi[10]);
+                // PDO 0x1a00
+                uint8_t *pi = ec_slave[i].inputs;  // txpdo
+                statusf(3+(2*(i-1)), "I: %02x%02x %02x%02x%02x%02x %02x%02x%02x%02x %02x%02x%02x%02x\n",
+                        pi[1], pi[0],
+                        pi[5], pi[4], pi[3], pi[2],
+                        pi[9], pi[8], pi[7], pi[6],
+                        pi[13], pi[12], pi[11], pi[10]);
+            }
         }
+
+        statusf(8, "req: %8u act: %8u\n", motor[0].requested_pos(), motor[0].reported_pos());
     }
     
-    statusf(8, "req: %8u act: %8u\n", motor[0].requested_pos(), motor[0].reported_pos());
 
     if ((count % 20) == 0) {
         // display motor status

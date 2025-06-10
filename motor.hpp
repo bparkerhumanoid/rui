@@ -29,18 +29,16 @@ public:
         m_window.show();
 
         m_window.add_field(MF_STATUS,       1,  1, "status");
-        m_window.add_field(MF_INDEX,        1, 20, "index");
-        m_window.add_field(MF_CYCLES,       1, 60, "cycles");
+        m_window.add_field(MF_ECAT_STATE,   1, 20, "state");
+        m_window.add_field(MF_CYCLES,       1, 40, "cycles");
 
-        m_window.add_field(MF_ECAT_STATE,   2,  1, "state");
-        m_window.add_field(MF_REQ_POS,      2, 20, "req-p");
-        m_window.add_field(MF_REQ_VELOCITY, 2, 40, "req-v");
-        m_window.add_field(MF_REQ_TORQUE,   2, 60, "req-t");
+        m_window.add_field(MF_REQ_POS,      2,  1, "req-p");
+        m_window.add_field(MF_REQ_VELOCITY, 2, 20, "req-v");
+        m_window.add_field(MF_REQ_TORQUE,   2, 40, "req-t");
 
-        m_window.add_field(MF_REP_STATUS,   3,  1, "rep-stat");
-        m_window.add_field(MF_REP_POS,      3, 20, "rep-p");
-        m_window.add_field(MF_REP_VELOCITY, 3, 40, "rep-v");
-        m_window.add_field(MF_REP_TORQUE,   3, 60, "rep-t");
+        m_window.add_field(MF_REP_POS,      3,  1, "rep-p");
+        m_window.add_field(MF_REP_VELOCITY, 3, 20, "rep-v");
+        m_window.add_field(MF_REP_TORQUE,   3, 40, "rep-t");
 
         return 0;
     }
@@ -59,7 +57,7 @@ public:
 
     void set_reported_status(uint16_t status) {
         m_reported.status = status;
-        m_window.set_field_value_u16(MF_REP_STATUS, status);
+        m_window.set_field_value_u16(MF_STATUS, status);
         m_updated = true;
     }
 
@@ -107,7 +105,7 @@ public:
         m_state = -1;
     }
     bool squawk_state() {
-#if 0
+#if 1
         if (m_state_changed) {
             m_state_changed = false;
             return true;
@@ -138,7 +136,7 @@ public:
 private:
     Wwindow m_window;
     int m_win_height = 5;
-    int m_win_width = 120;
+    int m_win_width = 60;
     
     struct {
         uint16_t status;
