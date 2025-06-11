@@ -12,6 +12,7 @@
 
 #include <array>
 
+#include "rui.hpp"
 #include "ethercat.h"
 #include "log.hpp"
 #include "motor.hpp"
@@ -31,10 +32,11 @@ extern volatile uint64 ecat_thread_loops;
 extern volatile uint64 ecat_check_loops;
 
 extern std::array<Motor,64> motor;
+extern int app_mode;
+extern int selected_slave_no;
 
 int slave_count = 0;
 
-int slave_no = 1;
 
 const char *ec_state_text(int state) {
     switch (state) {
@@ -51,8 +53,10 @@ const char *ec_state_text(int state) {
 
 void dump_slave_state() {
     for (int i = 1; i <= ec_slavecount; i++) {
-        logf("slave %d State=%x(%s) StatusCode=%04x (%s)\n",
-             i, ec_slave[i].state, ec_state_text(ec_slave[i].state),
+        unsigned state = ec_slave[i].state & 0xf;
+        
+        logf("slave %d State=%x(%s%s) StatusCode=%04x (%s)\n",
+             i, state, ec_state_text(state), (state & 0x10) ? "+ERR" : "",
              ec_slave[i].ALstatuscode, ec_ALstatuscode2string(ec_slave[i].ALstatuscode));
     }
 }
@@ -534,29 +538,6 @@ void slave_set_moving(int slaven, int yesno) {
 
 int slave_moving(int slaven) {
     return motor[slaven].moving();
-}
-
-//
-// @brief Called by main loop when keyboard input detecgted
-//
-int run_input(int ch)
-{
-    switch (ch) {
-    case 'u':
-        motor[slave_no].set_requested_pos( motor[slave_no].reported_pos() + 100 );
-        logf("up %u\n", motor[slave_no].requested_pos());
-        break;
-        
-    case 'd':
-        motor[slave_no].set_requested_pos( motor[slave_no].reported_pos() - 100 );
-        logf("down %u\n", motor[slave_no].requested_pos());
-        break;
-        
-    case 'q':
-        return -1;
-    }
-    
-    return 0;
 }
 
 //

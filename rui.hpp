@@ -1,6 +1,7 @@
 
 typedef enum AppMode {
-    APPMODE_POSE = 1,
+    APPMODE_IDLE = 1,
+    APPMODE_SPIN,
     APPMODE_INDIVIDUAL,
-    APPMODE_CYCLINCAL,
+    APPMODE_POSE,
 } AppMode;

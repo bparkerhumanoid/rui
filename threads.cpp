@@ -16,6 +16,7 @@
 #include "log.hpp"
 #include "motor.hpp"
 #include "move.hpp"
+#include "threads.hpp"
 
 #define NSEC_PER_SEC 1000000000
 #define EC_TIMEOUTMON 500
@@ -40,6 +41,8 @@ volatile uint64 ecat_thread_loops;
 volatile uint64 ecat_check_loops;
 
 extern std::array<Motor,64> motor;
+extern int app_mode;
+extern int selected_slave_no;
 
 // add ns to timespec
 void add_timespec(struct timespec *ts, int64 addtime)
@@ -94,7 +97,8 @@ OSAL_THREAD_FUNC_RT ecat_thread(void *ptr) {
     const int MAX_MISSED_CYCLES = 10;
     struct timespec cycle_start, cycle_end;
     long cycle_time_ns;
-
+    bool need_powerup = true;
+    
     clock_gettime(CLOCK_MONOTONIC, &ts);
     ht = (ts.tv_nsec / 1000000) + 1;
     ts.tv_nsec = ht * 1000000;
@@ -125,7 +129,6 @@ OSAL_THREAD_FUNC_RT ecat_thread(void *ptr) {
     // Send initial process data
     ec_send_processdata();
 
-    int step = 0;
     bool need_update = false;
     int32_t new_target = 0;
 
@@ -160,6 +163,40 @@ OSAL_THREAD_FUNC_RT ecat_thread(void *ptr) {
             // Receive process data
             wkc = ec_receive_processdata(EC_TIMEOUTRET);
 
+            // packet loss?  or one/more motors is misconfigued or reset/no-op
+            if (wkc >= 0 && wkc < expectedWKC) {
+                if (!need_powerup) {
+                    logf("WARNING: Working counter error (wkc: %d, expected: %d)\n", 
+                         wkc, expectedWKC);
+                    need_powerup = true;
+                    ecat_reset_powerups();
+                }
+            }
+
+            // copy input data to txpdo
+            for (int s = 0; s < ec_slavecount; s++) {
+                int ec_index = s+1;
+                txpdo_t *txpdo_p = motor[s].get_txpdo();
+                memcpy(txpdo_p, ec_slave[ec_index].inputs, sizeof(txpdo_t));
+            }
+
+            // motor needs to be in safe to turn on
+            if (need_powerup) {
+                if (ecat_do_powerups()) {
+                    need_powerup = false;
+                }
+            } else {
+                ecat_do_motion();
+            }
+            
+            // copy output data to rxpdo
+            for (int s = 0; s < ec_slavecount; s++) {
+                int ec_index = s+1;
+                rxpdo_t *rxpdo_p = motor[s].get_rxpdo();
+                memcpy(ec_slave[ec_index].outputs, rxpdo_p, sizeof(rxpdo_t));
+            }
+
+#if 0
             if (wkc >= expectedWKC) {
                 // Retrieve the current motor status
                 for (int s = 0; s < ec_slavecount; s++) {
@@ -167,15 +204,6 @@ OSAL_THREAD_FUNC_RT ecat_thread(void *ptr) {
                     txpdo_t *txpdo_p = motor[s].get_txpdo();
                     memcpy(txpdo_p, ec_slave[ec_index].inputs, sizeof(txpdo_t));
                 }
-
-//                // Check if there is a new target position
-//                pthread_mutex_lock(&target_mutex);
-//                need_update = target_updated;
-//                if (need_update) {
-//                    new_target = received_target;
-//                    target_updated = false;
-//                }
-//                pthread_mutex_unlock(&target_mutex);
 
                 // Send PDO data to the slaves
                 if (step <= 1000) {
@@ -261,7 +289,8 @@ OSAL_THREAD_FUNC_RT ecat_thread(void *ptr) {
                 logf("WARNING: Working counter error (wkc: %d, expected: %d)\n", 
                        wkc, expectedWKC);
             }
-
+#endif
+            
             // Clock synchronization
             if (ec_slave[0].hasdc) {
                 ec_sync(ec_DCtime, cycletime, &toff);

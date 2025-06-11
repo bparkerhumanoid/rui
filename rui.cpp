@@ -20,6 +20,9 @@ Wwindow statuswindow(41, 1, 10, 120, true);
 
 std::array<Motor,64> motor;
 
+int app_mode = APPMODE_IDLE;
+int selected_slave_no = 1;
+
 extern int slave_count;
 
 static void finish(int sig) {
@@ -41,9 +44,6 @@ int setup_curses() {
     // initialize the curses library 
     initscr();
 
-    // enable keyboard mapping
-    keypad(stdscr, TRUE);
-
     // tell curses not to do NL->CR/NL on output
     nonl();
 
@@ -52,6 +52,9 @@ int setup_curses() {
 
     // echo input - in color
     noecho();
+
+    // enable keyboard mapping
+    keypad(stdscr, TRUE);
 
     clear();
 
@@ -85,15 +88,16 @@ void input_loop() {
     unsigned count = 0;
 
     timeout(0);
+    int ch = -1;
     for (;;) {
-        //int c = getch();
-        int c = wgetch(log_window());
-        if (c < 0) {
+        ch = wgetch(log_window());
+        if (ch < 0) {
             run_loop(count++);
             continue;
         }
-        
-        if (run_input(c)) break;
+
+        //logf("ch %d 0x%02x (%d %d)\n", ch, ch, KEY_UP, KEY_DOWN);
+        if (run_input(ch)) break;
     }
 }
 
@@ -174,8 +178,8 @@ int main(int argc, char *argv[]) {
     nocbreak();
     logf("press any key\n");
     while (1) {
-        int c = wgetch(log_window());
-        if (c > 0) break;
+        int ch = wgetch(log_window());
+        if (ch > 0) break;
     }
 
     shutdown();

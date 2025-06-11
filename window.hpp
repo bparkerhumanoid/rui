@@ -241,6 +241,8 @@ private:
             box(m_win, 0, 0);
         }
 
+        keypad(m_win, TRUE);
+        
         // Show the box
         wrefresh(m_win);
     }
