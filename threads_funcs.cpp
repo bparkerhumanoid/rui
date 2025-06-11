@@ -22,12 +22,13 @@ void ecat_reset_powerups()
     extern void dump_slave_state();
     dump_slave_state();
     
+#if 0
     for (int s = 0; s < ec_slavecount; s++) {
         int ec_index = s+1;
         ec_slave[ec_index].state = EC_STATE_SAFE_OP;
         ec_writestate(ec_index);
     }
-
+#endif
 }
 
 // @brief called inside ecat thread, do power up sequence
@@ -66,7 +67,7 @@ int ecat_do_powerups()
             motor[s].set_powerstate(4);
         }
 
-        if (false) {
+        if (true/*false*/) {
             if (step == 400 || step == 600 || step == 800 || step == 1000) {
                 uint8_t *pi = ec_slave[ec_index].inputs;  // txpdo
                 uint16_t status = (pi[1] << 8) | (pi[0] << 0);
@@ -114,8 +115,9 @@ void do_mode_spin()
         rxpdo_p->mode_of_operation = 8;
 
 //#define MAX_DELTA 250
+#define MAX_DELTA 200
 //#define MAX_POS 524288
-#define MAX_DELTA 50
+//#define MAX_DELTA 50
 #define MAX_POS 100000
         //rxpdop->target_position = slave_requested_pos(slave);
         if (motor[s].get_dir() == 0) {
@@ -124,7 +126,7 @@ void do_mode_spin()
                 //if (rxpdo_p->target_position > 524288) rxpdo_p->target_position = 524288;
                 motor[s].set_dir(-1);
             } else {
-                rxpdo_p->target_position = txpdo_p->actual_position + MAX_DELTA;
+                rxpdo_p->target_position = txpdo_p->actual_position + motor[s].get_delta();
             }
         } else {
             if (txpdo_p->actual_position <= MAX_DELTA) {
@@ -132,7 +134,7 @@ void do_mode_spin()
                 rxpdo_p->target_position = txpdo_p->actual_position - 10;
                 if (rxpdo_p->target_position < 0) rxpdo_p->target_position = 0;
             } else {
-                rxpdo_p->target_position = txpdo_p->actual_position - MAX_DELTA;
+                rxpdo_p->target_position = txpdo_p->actual_position - motor[s].get_delta();
             }
         }
     }

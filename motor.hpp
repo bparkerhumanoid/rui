@@ -94,8 +94,6 @@ public:
         m_updated = true;
     }
 
-    void set_dir(int d) { m_dir = d; }
-
     void note_state(int state) {
         if (m_state != state) m_state_changed = true;
         m_state = state;
@@ -117,7 +115,18 @@ public:
     }
     
     int get_win_height() const { return m_win_height; }
+
+    void set_dir(int d) {
+        m_dir = d;
+        m_delta = 10;
+    }
     int get_dir() const { return m_dir; }
+
+    int get_delta() {
+        m_delta++;
+        if (m_delta > 200) m_delta = 200;
+        return m_delta;
+    }
     
     void display() {
         if (!m_updated) return;
@@ -155,7 +164,8 @@ private:
     bool m_moving = false;
     bool m_updated = false;
     int m_dir = 0;
-
+    int m_delta = 10;
+    
     // Initialize PDO data
     rxpdo_t m_rxpdo{};
     txpdo_t m_txpdo{};

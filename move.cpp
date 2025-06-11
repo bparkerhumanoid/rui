@@ -259,7 +259,8 @@ int erob_setup()
         logf("Slave %d: Type %d, Address 0x%02x, State actual %d, required %d\n", 
                i, ec_slave[i].eep_id, ec_slave[i].configadr, ec_slave[i].state, EC_STATE_INIT);
 
-        ecx_dcsync0(&ecx_context, i, TRUE, 500000, 0);  //Synchronize the distributed clock for the slave
+//        ecx_dcsync0(&ecx_context, i, TRUE, 500000, 0);  //Synchronize the distributed clock for the slave
+        ecx_dcsync0(&ecx_context, i, TRUE, 1000000, 0);
     }
 
     logf("checking all slaves for pre-op\n");
